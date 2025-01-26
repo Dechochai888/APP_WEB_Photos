@@ -40,9 +40,6 @@ app.post('/upload', (req, res, next) => {
       return res.status(500).send(err.message);
     }
 
-    console.log('Request Body:', req.body); // Debug: ดูค่าที่ได้รับ
-    console.log('Uploaded File:', req.file); // Debug: ตรวจสอบไฟล์ที่อัพโหลด
-
     if (!req.body.album) {
       return res.status(400).send('Album name is required.');
     }
@@ -73,5 +70,5 @@ app.get('/albums', (req, res) => {
 });
 
 // Start the server
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

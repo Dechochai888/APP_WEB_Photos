@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Album Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      text-align: center;
+    }
+    .album {
+      margin: 20px 0;
+      text-align: left;
+    }
+    .image-list img {
+      max-width: 100px;
+      margin: 5px;
+    }
+    .image-list a {
+      display: inline-block;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Album Manager</h1>
+    <form id="uploadForm" enctype="multipart/form-data" method="POST" action="/upload">
+      <input type="text" id="albumName" name="album" placeholder="Album Name" required>
+      <input type="file" name="file" id="fileInput" accept="image/*" required>
+      <button type="submit">Upload</button>
+    </form>
+    <h2>Albums</h2>
+    <div id="albums"></div>
+  </div>
+
+  <script>
+    const albumsDiv = document.getElementById('albums');
+
+    async function loadAlbums() {
+      const response = await fetch('/albums');
+      const albums = await response.json();
+
+      albumsDiv.innerHTML = Object.keys(albums).map(albumName => `
+        <div class="album">
+          <h3>${albumName}</h3>
+          <div class="image-list">
+            ${albums[albumName].map(file => `
+              <div>
+                <img src="/uploads/${albumName}/${file}" alt="${file}" style="max-width: 100px;">
+                <a href="/uploads/${albumName}/${file}" download="${file}">Download</a>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        alert('File uploaded successfully!');
+        loadAlbums();
+      } else {
+        const errorText = await response.text();
+        alert(`File upload failed: ${errorText}`);
+      }
+    });
+
+    loadAlbums();
+  </script>
+</body>
+</html>

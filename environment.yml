@@ -1,0 +1,4 @@
+name: image-upload-app
+dependencies:
+  - python=3.9
+  - flask

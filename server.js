@@ -5,11 +5,9 @@ const path = require('path');
 
 const app = express();
 
-// Middleware รองรับข้อมูลฟอร์ม
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// ตั้งค่า Multer สำหรับการอัพโหลด
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const albumName = req.body.album;
@@ -28,47 +26,23 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Serve static files
 app.use(express.static('public'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Upload Endpoint
-app.post('/upload', (req, res, next) => {
-  upload.single('file')(req, res, (err) => {
-    if (err) {
-      console.error('Upload Error:', err.message);
-      return res.status(500).send(err.message);
-    }
-
-    if (!req.body.album) {
-      return res.status(400).send('Album name is required.');
-    }
-
-    if (!req.file) {
-      return res.status(400).send('No file uploaded.');
-    }
-
-    res.send('File uploaded successfully.');
-  });
+app.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).send('No file uploaded.');
+  res.send('File uploaded successfully.');
 });
 
-// Fetch albums and files
 app.get('/albums', (req, res) => {
-  const albumsDir = path.join(__dirname, 'uploads');
-  const albums = {};
-
-  if (fs.existsSync(albumsDir)) {
-    fs.readdirSync(albumsDir).forEach(album => {
-      const albumPath = path.join(albumsDir, album);
-      if (fs.statSync(albumPath).isDirectory()) {
-        albums[album] = fs.readdirSync(albumPath);
-      }
-    });
-  }
-
-  res.json(albums);
+  const albums = fs.readdirSync('uploads').filter(dir => fs.statSync(path.join('uploads', dir)).isDirectory());
+  res.json(Object.fromEntries(albums.map(album => [album, fs.readdirSync(path.join('uploads', album))])));
 });
 
-// Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.get('/albums/:albumName', (req, res) => {
+  const albumPath = path.join('uploads', req.params.albumName);
+  if (!fs.existsSync(albumPath)) return res.status(404).send('Album not found.');
+  res.json(fs.readdirSync(albumPath));
+});
+
+app.listen(3000, () => console.log('Server running on http://localhost:3000'));

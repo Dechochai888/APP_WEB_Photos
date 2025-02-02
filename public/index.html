@@ -3,195 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Takongsaypay photos</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+  <title>Image Album Manager</title>
+  <link rel="manifest" href="/manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('Service Worker Registered'))
+        .catch(error => console.error('Service Worker Error:', error));
     }
-
+  </script>
+  <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #f4f4f9;
       color: #333;
-      line-height: 1.6;
-      margin: 20px;
+      text-align: center;
     }
-
     .container {
       max-width: 800px;
       margin: auto;
       padding: 20px;
-      background: #ffffff;
+      background: white;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       border-radius: 8px;
     }
-
-    h1, h2 {
-      margin-bottom: 20px;
-      text-align: center;
-      color: #4CAF50;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    input[type="text"],
-    input[type="file"],
-    button {
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-
-    button {
-      background-color: #4CAF50;
-      color: white;
-      cursor: pointer;
-      border: none;
-    }
-
-    button:hover {
-      background-color: #45a049;
-    }
-
-    .album {
+    .album, button {
       margin: 10px 0;
-      background: #f9f9f9;
       padding: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
       border-radius: 5px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       cursor: pointer;
     }
-
-    .album h3 {
-      margin-bottom: 5px;
-      color: #333;
-    }
-
-    .image-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 10px;
-    }
-
-    .image-list div {
-      text-align: center;
-    }
-
-    .image-list img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 5px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .image-list a {
-      display: block;
-      margin-top: 5px;
-      color: #4CAF50;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    .image-list a:hover {
-      text-decoration: underline;
+    .album:hover, button:hover {
+      background: #45a049;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>ตากล้องสายเปย์ Official</h1>
+    <h1>Image Album Manager</h1>
     <form id="uploadForm" enctype="multipart/form-data">
-      <input type="text" id="albumName" name="album" placeholder="สร้างอัลบั้มรูปภาพ" required>
+      <input type="text" id="albumName" name="album" placeholder="Enter Album Name" required>
       <input type="file" name="file" id="fileInput" accept="image/*" required>
       <button type="submit">Upload</button>
     </form>
-
-    <h2>อัลบั้ม ตากล้องสายเปย์</h2>
+    <h2>Albums</h2>
     <div id="albums"></div>
-
-    <div id="albumDetail" style="display: none;">
-      <h2 id="albumTitle"></h2>
-      <button id="downloadAll">Download All Images</button>
-      <div id="albumImages" class="image-list"></div>
-      <button onclick="backToAlbums()">Back to Albums</button>
-    </div>
   </div>
 
   <script>
     const albumsDiv = document.getElementById('albums');
-    const albumDetailDiv = document.getElementById('albumDetail');
-    const albumTitle = document.getElementById('albumTitle');
-    const albumImages = document.getElementById('albumImages');
-    const downloadAllButton = document.getElementById('downloadAll');
 
     async function loadAlbums() {
       const response = await fetch('/albums');
       const albums = await response.json();
-
       albumsDiv.innerHTML = Object.keys(albums).map(albumName => `
-        <div class="album" onclick="viewAlbum('${albumName}')">
-          <h3>${albumName}</h3>
-        </div>
+        <button class="album" onclick="viewAlbum('${albumName}')">${albumName}</button>
       `).join('');
     }
 
     async function viewAlbum(albumName) {
       const response = await fetch(`/albums/${albumName}`);
       const files = await response.json();
-
-      albumTitle.textContent = albumName;
-      downloadAllButton.onclick = () => downloadAllImages(albumName, files);
-      albumImages.innerHTML = files.map(file => `
-        <div>
-          <img src="/uploads/${albumName}/${file}" alt="${file}">
-          <a href="/uploads/${albumName}/${file}" download="${file}">Download</a>
-        </div>
-      `).join('');
-
-      albumsDiv.style.display = 'none';
-      albumDetailDiv.style.display = 'block';
-    }
-
-    function backToAlbums() {
-      albumDetailDiv.style.display = 'none';
-      albumsDiv.style.display = 'block';
-    }
-
-    function downloadAllImages(albumName, files) {
-      files.forEach(file => {
-        const link = document.createElement('a');
-        link.href = `/uploads/${albumName}/${file}`;
-        link.download = file;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
+      alert(`Files in ${albumName}: \n${files.join("\n")}`);
     }
 
     document.getElementById('uploadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
-
-      const response = await fetch('/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        alert('File uploaded successfully!');
-        loadAlbums();
-      } else {
-        const errorText = await response.text();
-        alert(`File upload failed: ${errorText}`);
-      }
+      const response = await fetch('/upload', { method: 'POST', body: formData });
+      response.ok ? loadAlbums() : alert('Upload failed');
     });
 
     loadAlbums();

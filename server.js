@@ -5,19 +5,15 @@ const path = require('path');
 
 const app = express();
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.static('public'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const albumName = req.body.album;
-    if (!albumName) {
-      return cb(new Error('Album name is required.'));
-    }
+    if (!albumName) return cb(new Error('Album name is required.'));
     const dir = path.join(__dirname, 'uploads', albumName);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
   filename: (req, file, cb) => {
@@ -25,9 +21,6 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
-
-app.use(express.static('public'));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).send('No file uploaded.');
